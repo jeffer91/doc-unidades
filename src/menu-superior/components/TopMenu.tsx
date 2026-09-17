@@ -11,7 +11,7 @@ type Props={
 export function TopMenu({unit,onUnit,periods,period,onPeriod,onNewPeriod,designMode,onToggleDesign}:Props){
   return <header className="top-menu">
     <div className="brand-wrap">
-      <div className="brand-mark" aria-hidden="true">DU</div>
+      <img className="brand-logo" src="./icon.png" alt="ITSQMET"/>
       <div><div className="brand-title">DOC-UNIDADES</div><div className="brand-subtitle">ITSQMET · Gestión documental institucional</div></div>
     </div>
     <div className="top-controls">

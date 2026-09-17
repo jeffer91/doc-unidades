@@ -19,6 +19,9 @@ contextBridge.exposeInMainWorld('docUnits', {
     upsert: (args: any) => ipcRenderer.invoke('matrices:upsert', args),
     remove: (id: number) => ipcRenderer.invoke('matrices:remove', id)
   },
+  pdf: {
+    generate: (args:any) => ipcRenderer.invoke('pdf:generate', args)
+  },
   stats: (args:any) => ipcRenderer.invoke('stats:get', args),
   system: {
     dataRoot: () => ipcRenderer.invoke('system:data-root')

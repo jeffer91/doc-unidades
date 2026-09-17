@@ -12,6 +12,7 @@ declare global {
         upsert(args:any): Promise<boolean>;
         remove(id:number): Promise<boolean>;
       };
+      pdf: { generate(args:any): Promise<{saved:boolean;path?:string}> };
       stats(args:any): Promise<{rows:number}>;
       system: { dataRoot(): Promise<string> };
     }

@@ -5,7 +5,13 @@ import { registry } from './core/registry/processRegistry';
 import type { UnitId } from './core/types/model';
 import { TextSection } from './components/TextSection';
 import { MatrixSection } from './components/MatrixSection';
-import { InfoSection } from './components/InfoSection';
+import { SummarySection } from './components/SummarySection';
+
+function tabLabel(section:any){
+  if(section.kind==='info')return 'Resumen';
+  if(section.id==='RESUMEN'&&section.label==='Resumen')return 'Resumen Ejecutivo';
+  return section.label;
+}
 
 export default function App(){
   const [unit,setUnit]=useState<UnitId>('UGPA'); const [periods,setPeriods]=useState<any[]>([]); const [period,setPeriod]=useState<any|null>(null); const [showNew,setShowNew]=useState(false); const [designMode,setDesignMode]=useState(false);
@@ -20,8 +26,8 @@ export default function App(){
     <main className="workspace">
       <nav className="process-tabs">{processes.map(p=><button key={p.id} className={p.id===process.id?'active':''} onClick={()=>setProcessId(p.id)}>{p.label}</button>)}</nav>
       <nav className="document-tabs">{process.documents.map(d=><button key={d.id} className={d.id===document.id?'active':''} onClick={()=>setDocumentId(d.id)}><strong>{d.label}</strong><small>{d.code ?? 'Documento'}</small></button>)}</nav>
-      <nav className="section-tabs">{document.sections.map(s=><button key={s.id} className={s.id===section.id?'active':''} onClick={()=>setSectionId(s.id)}>{s.label}</button>)}</nav>
-      <section className="content-area">{section.kind==='text'?<TextSection section={section} ctx={ctx} designMode={designMode}/>:section.kind==='matrix'?<MatrixSection section={section} ctx={ctx}/>:<InfoSection ctx={ctx}/>}</section>
+      <nav className="section-tabs">{document.sections.map(s=><button key={s.id} className={s.id===section.id?'active':''} onClick={()=>setSectionId(s.id)}>{tabLabel(s)}</button>)}</nav>
+      <section className="content-area">{section.kind==='text'?<TextSection section={section} ctx={ctx} designMode={designMode}/>:section.kind==='matrix'?<MatrixSection section={section} ctx={ctx}/>:<SummarySection ctx={ctx} onOpenSection={setSectionId}/>}</section>
     </main>}
   </div>
 }

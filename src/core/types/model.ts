@@ -8,6 +8,16 @@ export type MatrixColumn = {
   options?: string[];
 };
 
+export type SummaryItemConfig = {
+  id: string;
+  label: string;
+  description?: string;
+  matrixId: string;
+  columns: MatrixColumn[];
+  required?: boolean;
+  sectionId?: string;
+};
+
 export type SectionConfig = {
   id: string;
   label: string;
@@ -22,6 +32,7 @@ export type DocumentConfig = {
   label: string;
   code?: string;
   sections: SectionConfig[];
+  summaryItems?: SummaryItemConfig[];
 };
 
 export type ProcessConfig = {
