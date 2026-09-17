@@ -70,6 +70,7 @@ export type SectionConfig = {
   defaultTemplate?: string;
   matrixId?: string;
   columns?: MatrixColumn[];
+  required?: boolean;
 };
 
 export type DocumentConfig = {
