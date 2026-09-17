@@ -1,6 +1,7 @@
 import React,{useState} from 'react';
 import { interpolate, periodLabel } from '../core/templates/interpolate';
 import type { SummaryItemConfig } from '../core/types/model';
+import { loadCoverSettings } from '../core/cover/cover';
 
 function validateRows(item:SummaryItemConfig,rows:any[]){
   const errors:string[]=[];
@@ -20,10 +21,11 @@ export function DocumentDraftButton({ctx}:{ctx:any}){
     if(!ctx.period||generating)return;
     setGenerating(true);setMessage('Preparando borrador…');
     try{
+      const cover=await loadCoverSettings(ctx);
       const sections:any[]=[];
       const seenMatrices=new Set<string>();
       for(const section of ctx.document.sections){
-        if(section.kind==='info')continue;
+        if(section.kind==='info'||section.kind==='cover')continue;
         if(section.kind==='text'){
           const scope={unitId:ctx.unit,processId:ctx.process.id,documentId:ctx.document.id,sectionId:section.id};
           const [saved,tpl]=await Promise.all([
@@ -54,10 +56,11 @@ export function DocumentDraftButton({ctx}:{ctx:any}){
       const result=await window.docUnits.pdf.generate({
         draft:true,
         title:ctx.document.label,
-        code:ctx.document.code??'',
+        code:cover.code||ctx.document.code||'',
         unit:ctx.unit,
         process:ctx.process.label,
         period:periodLabel(ctx.period),
+        cover,
         pending,
         sections
       });
