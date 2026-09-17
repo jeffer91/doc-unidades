@@ -2,6 +2,7 @@ import React,{useEffect,useMemo,useRef,useState} from 'react';
 import type { FieldDefinition, SectionConfig } from '../core/types/model';
 import { availableFields, inspectTemplateFields, renderTemplateFields, type FieldInspection } from '../core/fields/fieldEngine';
 import { periodLabel } from '../core/templates/interpolate';
+import './TextSection.css';
 
 export function TextSection({section,ctx,designMode}:{section:SectionConfig;ctx:any;designMode:boolean}){
   const [savedTemplate,setSavedTemplate]=useState<string>('');
