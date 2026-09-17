@@ -7,6 +7,19 @@ export const formacionProcess: ProcessConfig = {
   documents: [
     {
       id: 'DNF', label: 'Detección de Necesidades', code: 'UGPA-RGI1-01-PRO-31',
+      fields:[
+        {key:'TOTAL_CARRERAS',label:'Total de carreras',group:'Carreras',kind:'compound',operation:'count',source:{matrixId:'FORM.DNF.CARRERAS'}},
+        {key:'TOTAL_CARRERAS_ACTIVAS',label:'Total de carreras activas',group:'Carreras',kind:'compound',operation:'count',source:{matrixId:'FORM.DNF.CARRERAS'},filter:{column:'ESTADO_PERIODO',equals:'Activa'}},
+        {key:'TOTAL_NECESIDADES',label:'Total de necesidades de formación',group:'Necesidades',kind:'compound',operation:'count',source:{matrixId:'FORM.DNF.NECESIDADES'}},
+        {key:'TOTAL_CARRERAS_CON_NECESIDADES',label:'Carreras con necesidades',group:'Necesidades',kind:'compound',operation:'count_unique',source:{matrixId:'FORM.DNF.NECESIDADES'},column:'CARRERA'},
+        {key:'PORCENTAJE_PRIORIDAD_ALTA',label:'Porcentaje de necesidades con prioridad alta',group:'Necesidades',kind:'compound',operation:'percentage_where',source:{matrixId:'FORM.DNF.NECESIDADES'},filter:{column:'PRIORIDAD_MANUAL',equals:'Alta'},decimals:1},
+        {key:'PORCENTAJE_PRIORIDAD_MEDIA',label:'Porcentaje de necesidades con prioridad media',group:'Necesidades',kind:'compound',operation:'percentage_where',source:{matrixId:'FORM.DNF.NECESIDADES'},filter:{column:'PRIORIDAD_MANUAL',equals:'Media'},decimals:1},
+        {key:'PORCENTAJE_PRIORIDAD_BAJA',label:'Porcentaje de necesidades con prioridad baja',group:'Necesidades',kind:'compound',operation:'percentage_where',source:{matrixId:'FORM.DNF.NECESIDADES'},filter:{column:'PRIORIDAD_MANUAL',equals:'Baja'},decimals:1},
+        {key:'TOTAL_FUENTES_CONFIRMADAS',label:'Fuentes institucionales confirmadas',group:'Fuentes',kind:'compound',operation:'count',source:{matrixId:'FORM.DNF.FUENTES'},filter:{column:'CONFIRMADA',equals:'Sí'}},
+        {key:'PRIMERA_FUENTE_CONFIRMADA',label:'Primera fuente institucional confirmada',group:'Fuentes',kind:'simple',operation:'value',source:{matrixId:'FORM.DNF.FUENTES'},column:'FUENTE',filter:{column:'CONFIRMADA',equals:'Sí'},required:false},
+        {key:'TOTAL_ENCUESTAS',label:'Total de resultados de encuestas',group:'Fuentes',kind:'compound',operation:'count',source:{matrixId:'FORM.DNF.ENCUESTAS'},required:false},
+        {key:'TOTAL_REUNIONES',label:'Total de reuniones académicas',group:'Fuentes',kind:'compound',operation:'count',source:{matrixId:'FORM.DNF.REUNIONES'},required:false}
+      ],
       summaryItems:[
         {id:'CARRERAS',label:'Carreras',description:'Catálogo de carreras del período.',matrixId:'FORM.DNF.CARRERAS',required:true,columns:[
           {key:'CARRERA',label:'Carrera',required:true},
@@ -65,6 +78,12 @@ export const formacionProcess: ProcessConfig = {
     },
     {
       id:'PLAN', label:'Plan de Formación', code:'UGPA-RGI2-01-PRO-31',
+      fields:[
+        {key:'TOTAL_NECESIDADES_DNF',label:'Necesidades heredadas de la DNF',group:'DNF heredada',kind:'inherited',operation:'count',source:{documentId:'DNF',matrixId:'FORM.DNF.NECESIDADES'}},
+        {key:'TOTAL_ACCIONES_FORMACION',label:'Total de acciones de formación',group:'Plan',kind:'compound',operation:'count',source:{matrixId:'FORM.PLAN.ACCIONES'}},
+        {key:'TOTAL_CARRERAS_PLAN',label:'Carreras incluidas en el Plan',group:'Plan',kind:'compound',operation:'count_unique',source:{matrixId:'FORM.PLAN.ACCIONES'},column:'CARRERA'},
+        {key:'NIVELES_FORMACION_PLAN',label:'Niveles de formación incluidos',group:'Plan',kind:'compound',operation:'join_unique',source:{matrixId:'FORM.PLAN.ACCIONES'},column:'NIVEL_FORMACION',required:false}
+      ],
       sections:[
         {id:'INFO',label:'Resumen',kind:'info'},
         {id:'INTRO',label:'Introducción',kind:'text',defaultTemplate:'El Plan de Formación Docente del período {{PERIODO}} transforma las necesidades validadas en acciones de formación proyectadas y trazables.'},
@@ -82,6 +101,13 @@ export const formacionProcess: ProcessConfig = {
     },
     {
       id:'INFORME', label:'Informe de Cumplimiento', code:'UGPA-RGI3-01-PRO-31',
+      fields:[
+        {key:'TOTAL_ACCIONES_PLAN',label:'Acciones heredadas del Plan',group:'Plan heredado',kind:'inherited',operation:'count',source:{documentId:'PLAN',matrixId:'FORM.PLAN.ACCIONES'}},
+        {key:'TOTAL_ACCIONES_SEGUIMIENTO',label:'Acciones con seguimiento',group:'Cumplimiento',kind:'compound',operation:'count',source:{matrixId:'FORM.INF.SEGUIMIENTO'}},
+        {key:'TOTAL_FINALIZADAS',label:'Acciones finalizadas',group:'Cumplimiento',kind:'compound',operation:'count',source:{matrixId:'FORM.INF.SEGUIMIENTO'},filter:{column:'ESTADO',equals:'Finalizado'}},
+        {key:'PORCENTAJE_CUMPLIMIENTO',label:'Porcentaje de acciones finalizadas',group:'Cumplimiento',kind:'compound',operation:'percentage_where',source:{matrixId:'FORM.INF.SEGUIMIENTO'},filter:{column:'ESTADO',equals:'Finalizado'},decimals:1},
+        {key:'PROMEDIO_AVANCE',label:'Promedio de avance',group:'Cumplimiento',kind:'compound',operation:'average',source:{matrixId:'FORM.INF.SEGUIMIENTO'},column:'AVANCE_PORCENTAJE',decimals:1}
+      ],
       sections:[
         {id:'INFO',label:'Resumen',kind:'info'},
         {id:'INTRO',label:'Introducción',kind:'text',defaultTemplate:'El Informe de Cumplimiento consolida el estado real de ejecución de las acciones del Plan de Formación Docente del período {{PERIODO}}.'},
