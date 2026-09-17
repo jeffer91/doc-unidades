@@ -1,6 +1,8 @@
 export type UnitId = 'UGPA' | 'UTET';
 export type DocumentType = 'RGI' | 'INF';
 export type SectionKind = 'info' | 'text' | 'matrix' | 'cover';
+export type FieldKind = 'system' | 'simple' | 'compound' | 'inherited';
+export type FieldOperation = 'value' | 'count' | 'count_unique' | 'percentage_where' | 'average' | 'sum' | 'join_unique';
 
 export type MatrixColumn = {
   key: string;
@@ -17,6 +19,36 @@ export type SummaryItemConfig = {
   columns: MatrixColumn[];
   required?: boolean;
   sectionId?: string;
+};
+
+export type FieldFilter = {
+  column: string;
+  equals?: string | number | boolean;
+  notEquals?: string | number | boolean;
+  truthy?: boolean;
+};
+
+export type FieldSource = {
+  matrixId: string;
+  unitId?: UnitId;
+  processId?: string;
+  documentId?: string;
+};
+
+export type FieldDefinition = {
+  key: string;
+  label: string;
+  description?: string;
+  group?: string;
+  kind: FieldKind;
+  operation?: FieldOperation;
+  source?: FieldSource;
+  column?: string;
+  filter?: FieldFilter;
+  denominatorFilter?: FieldFilter;
+  decimals?: number;
+  separator?: string;
+  required?: boolean;
 };
 
 export type CoverSettings = {
@@ -46,6 +78,7 @@ export type DocumentConfig = {
   documentType?: DocumentType;
   sections: SectionConfig[];
   summaryItems?: SummaryItemConfig[];
+  fields?: FieldDefinition[];
 };
 
 export type ProcessConfig = {
