@@ -18,6 +18,7 @@
     "@vitejs/plugin-react": "latest",
     "better-sqlite3": "latest",
     "electron": "latest",
+    "pdf-lib": "latest",
     "react": "latest",
     "react-dom": "latest",
     "xlsx": "latest"
@@ -38,7 +39,10 @@
     "appId": "ec.edu.itsqmet.docunidades",
     "productName": "DOC-UNIDADES",
     "files": ["dist/**/*", "dist-electron/**/*", "package.json"],
-    "extraResources": [{"from":"resources/icon.png","to":"icon.png"}],
+    "extraResources": [
+      {"from":"resources/icon.png","to":"icon.png"},
+      {"from":"resources/logo.png","to":"logo.png"}
+    ],
     "directories": {
       "buildResources": "resources",
       "output": "release"
