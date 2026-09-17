@@ -30,7 +30,7 @@ export function buildDefaultBlocks(document:DocumentConfig):DocumentBlock[]{
   if(document.blocks?.length)return document.blocks;
   return document.sections
     .filter(section=>section.kind!=='info'&&section.kind!=='cover')
-    .map(section=>({
+    .map<DocumentBlock>(section=>({
       id:`BLOCK_${section.id}`,
       kind:section.kind==='matrix'?'table':'text',
       sectionId:section.id,
