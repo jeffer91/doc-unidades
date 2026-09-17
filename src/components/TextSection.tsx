@@ -20,6 +20,10 @@ export function TextSection({section,ctx,designMode}:{section:SectionConfig;ctx:
     return [...groups.entries()];
   },[fields]);
 
+  useEffect(()=>{
+    if(!fields.some(f=>f.key===selectedField))setSelectedField(fields[0]?.key??'PERIODO');
+  },[fields,selectedField]);
+
   useEffect(()=>{(async()=>{
     if(!ctx.period)return;
     const scope={unitId:ctx.unit,processId:ctx.process.id,documentId:ctx.document.id,sectionId:section.id};
