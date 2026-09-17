@@ -107,7 +107,11 @@ export function SummarySection({ctx,onOpenSection}:Props){
         if(rows.length)out.push({kind:'matrix',label:section.label,columns:(section.columns??[]).map((c:any)=>({key:c.key,label:c.label})),rows});
       }
     }
-    for(const item of items){if(seenMatrices.has(item.matrixId))continue;const rows=stateOf(item).rows;if(rows.length)out.push({kind:'matrix',label:item.label,columns:item.columns.map(c=>({key:c.key,label:c.label})),rows});}
+    for(const item of items){
+      if(item.includeInPdf!==true||seenMatrices.has(item.matrixId))continue;
+      const rows=stateOf(item).rows;
+      if(rows.length)out.push({kind:'matrix',label:item.label,columns:item.columns.map(c=>({key:c.key,label:c.label})),rows});
+    }
     return {sections:out,fieldPending:[...new Set(fieldPending)]};
   }
 
