@@ -1,17 +1,18 @@
 import type { ProcessConfig } from '../../core/types/model';
-const text=(id:string,label:string,template:string)=>({id,label,kind:'text' as const,defaultTemplate:template});
-const info={id:'INFO',label:'Información',kind:'info' as const};
+import { planificacionProcess } from './planificacion/process.config';
+import { requisitosProcess } from './requisitos/process.config';
+import { examenComplexivoProcess } from './examen-complexivo/process.config';
+import { trabajoTitulacionProcess } from './trabajo-titulacion/process.config';
+import { articuloAcademicoProcess } from './articulo-academico/process.config';
+import { induccionProcess } from './induccion/process.config';
+import { informesProcess } from './informes/process.config';
 
-export const utetProcesses: ProcessConfig[] = [
-  {id:'PLANIFICACION',label:'Planificación',unit:'UTET',documents:[
-    {id:'COMPLEXIVO',label:'Examen Complexivo',sections:[info,text('INTRO','Introducción','Introducción de la planificación del Examen Complexivo para {{PERIODO}}.'),text('METODOLOGIA','Metodología','Metodología de la planificación del Examen Complexivo.'),{id:'CRONOGRAMA',label:'Cronograma',kind:'matrix',matrixId:'UTET.PLAN.COMPLEXIVO.CRONO',columns:[{key:'ACTIVIDAD',label:'Actividad',required:true},{key:'FECHA_INICIO',label:'Inicio'},{key:'FECHA_FIN',label:'Fin'},{key:'RESPONSABLE',label:'Responsable'}]}]},
-    {id:'TRABAJO',label:'Trabajo de Titulación',sections:[info,text('INTRO','Introducción','Introducción de la planificación de Trabajo de Titulación para {{PERIODO}}.'),text('BASE_LEGAL','Base Legal','Base legal aplicable al Trabajo de Titulación.'),{id:'CRONOGRAMA',label:'Cronograma',kind:'matrix',matrixId:'UTET.PLAN.TT.CRONO',columns:[{key:'ACTIVIDAD',label:'Actividad',required:true},{key:'FECHA_INICIO',label:'Inicio'},{key:'FECHA_FIN',label:'Fin'},{key:'RESPONSABLE',label:'Responsable'}]},text('RESULTADOS','Resultados','Análisis de resultados y mejora continua.')]},
-    {id:'ARTICULO',label:'Artículo Académico',sections:[info,text('INTRO','Introducción','Introducción de la planificación de Artículo Académico para {{PERIODO}}.'),text('MARCO','Marco normativo','Marco normativo y estratégico.'),text('METODOLOGIA','Metodología','Metodología de implementación del proceso.'),text('DESARROLLO','Desarrollo','Desarrollo operativo del proceso de titulación.'),text('EVALUACION','Evaluación','Evaluación, acreditación y seguimiento.'),text('DISPOSICIONES','Disposiciones','Disposiciones finales.'),text('REFERENCIAS','Referencias','Referencias institucionales.')]}
-  ]},
-  {id:'REQUISITOS',label:'Requisitos',unit:'UTET',documents:[{id:'SEGUIMIENTO',label:'Seguimiento de Requisitos',sections:[info,{id:'MATRIZ',label:'Matriz',kind:'matrix',matrixId:'UTET.REQ.SEG',columns:[{key:'CEDULA',label:'Cédula',required:true},{key:'ESTUDIANTE',label:'Estudiante',required:true},{key:'ACADEMICO',label:'Académico'},{key:'DOCUMENTACION',label:'Documentación'},{key:'APROBACION',label:'Aprobación Titulación'}]}]}]},
-  {id:'EXAMEN_COMPLEXIVO',label:'Examen Complexivo',unit:'UTET',documents:[{id:'EJECUCION',label:'Ejecución',sections:[info,{id:'RESULTADOS',label:'Resultados',kind:'matrix',matrixId:'UTET.COMP.RESULTADOS',columns:[{key:'CEDULA',label:'Cédula',required:true},{key:'TEORICO',label:'Teórico'},{key:'PRACTICO',label:'Práctico'},{key:'PROMEDIO',label:'Promedio'}]}]}]},
-  {id:'TRABAJO_TITULACION',label:'Trabajo de Titulación',unit:'UTET',documents:[{id:'EJECUCION',label:'Ejecución',sections:[info,text('INTRO','Introducción','Seguimiento del Trabajo de Titulación del período {{PERIODO}}.'),{id:'SEGUIMIENTO',label:'Seguimiento',kind:'matrix',matrixId:'UTET.TT.SEG',columns:[{key:'CEDULA',label:'Cédula',required:true},{key:'ESTUDIANTE',label:'Estudiante',required:true},{key:'TEMA',label:'Tema'},{key:'ESTADO',label:'Estado'}]}]}]},
-  {id:'ARTICULO_ACADEMICO',label:'Artículo Académico',unit:'UTET',documents:[{id:'GESTION',label:'Gestión',sections:[info,text('INTRO','Introducción','Gestión de Artículo Académico del período {{PERIODO}}.'),{id:'SEGUIMIENTO',label:'Seguimiento',kind:'matrix',matrixId:'UTET.ART.SEG',columns:[{key:'CEDULA',label:'Cédula',required:true},{key:'ESTUDIANTE',label:'Estudiante',required:true},{key:'TEMA',label:'Tema'},{key:'ESTADO',label:'Estado'}]}]}]},
-  {id:'INDUCCION',label:'Inducción',unit:'UTET',documents:[{id:'INDUCCION',label:'Inducción al Proceso',sections:[info,{id:'ASISTENCIA',label:'Asistencia',kind:'matrix',matrixId:'UTET.IND.ASIST',columns:[{key:'CEDULA',label:'Cédula',required:true},{key:'ESTUDIANTE',label:'Estudiante',required:true},{key:'ASISTIO',label:'Asistió'}]},text('INFORME','Informe','Informe de finalización de la inducción del período {{PERIODO}}.')]}]},
-  {id:'INFORMES',label:'Informes',unit:'UTET',documents:[{id:'FINAL',label:'Informe Final',sections:[info,text('INTRO','Introducción','Informe Final del Proceso de Titulación del período {{PERIODO}}.'),{id:'COMPONENTES',label:'Componentes',kind:'matrix',matrixId:'UTET.INF.COMP',columns:[{key:'COMPONENTE',label:'Componente',required:true},{key:'ESTADO',label:'Estado',required:true},{key:'OBSERVACION',label:'Observación'}]},text('CONCLUSIONES','Conclusiones','Conclusiones institucionales del proceso.')]}]}
+export const utetProcesses:ProcessConfig[]=[
+  planificacionProcess,
+  requisitosProcess,
+  examenComplexivoProcess,
+  trabajoTitulacionProcess,
+  articuloAcademicoProcess,
+  induccionProcess,
+  informesProcess
 ];
