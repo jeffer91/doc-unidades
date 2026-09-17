@@ -1,6 +1,7 @@
 import React,{useEffect,useMemo,useRef,useState} from 'react';
 import type { FieldDefinition, SectionConfig } from '../core/types/model';
 import { availableFields, renderTemplateFields } from '../core/fields/fieldEngine';
+import { periodLabel } from '../core/templates/interpolate';
 
 export function TextSection({section,ctx,designMode}:{section:SectionConfig;ctx:any;designMode:boolean}){
   const [savedTemplate,setSavedTemplate]=useState<string>('');
@@ -78,6 +79,26 @@ export function TextSection({section,ctx,designMode}:{section:SectionConfig;ctx:
     setStatus('Texto copiado');setTimeout(()=>setStatus(''),1500);
   }
 
+  function fieldPromptLine(field:FieldDefinition){
+    const source=field.kind==='system'?'contexto del documento':field.source?.matrixId?`matriz ${field.source.matrixId}`:'sin fuente configurada';
+    const operation=field.operation?` · operación ${field.operation}`:'';
+    return `- {{${field.key}}}: ${field.label} · ${field.kind} · ${source}${operation}`;
+  }
+
+  function buildSectionPrompt(target:'template'|'content'){
+    const current=target==='template'?template:content;
+    const available=fields.map(fieldPromptLine).join('\n');
+    const currentPeriod=ctx.period?periodLabel(ctx.period):'Sin período seleccionado';
+    const documentType=ctx.document.documentType??'según configuración institucional';
+    return `Actúa como redactor académico e institucional para DOC-UNIDADES.\n\nCONTEXTO\n- Unidad: ${ctx.unit}\n- Proceso: ${ctx.process.label}\n- Documento: ${ctx.document.label}\n- Tipo documental: ${documentType}\n- Sección: ${section.label}\n- Período activo: ${currentPeriod}\n\nOBJETIVO\nRevisa, mejora o completa únicamente el contenido de la sección \"${section.label}\". El resultado debe quedar listo para copiar y pegar directamente en DOC-UNIDADES.\n\nREGLAS OBLIGATORIAS\n1. Mantén un tono académico, institucional, claro, formal y coherente.\n2. Aplica APA 7.ª edición en el cuerpo académico cuando corresponda, especialmente para citas, referencias, tablas y figuras.\n3. Respeta el estándar SVD 2.1: los datos deben provenir de registros reales; no inventes cifras, porcentajes, resultados, autores, años, normas, DOI, referencias ni fuentes.\n4. Conserva exactamente los campos dinámicos escritos entre dobles llaves, por ejemplo {{PERIODO}}. No los reemplaces por valores inventados.\n5. Usa únicamente los campos disponibles listados abajo. No inventes nuevos {{CAMPOS}}.\n6. Si para una afirmación cuantitativa falta un dato, usa el campo dinámico correspondiente si existe; si no existe, evita afirmar una cifra.\n7. Si una tabla es realmente necesaria, debe derivarse de una matriz o cálculo real. No crees tablas decorativas ni datos de ejemplo.\n8. Si un gráfico es realmente necesario, debe representar una comparación, distribución, evolución o relación sustentada por datos reales. Todo gráfico se considera Figura bajo APA 7. No inventes series ni porcentajes.\n9. No cambies la portada institucional, el código documental, el índice automático ni las reglas RGI/INF. Esta solicitud corresponde solo al cuerpo de la sección.\n10. Mantén las citas o referencias existentes si no tienes información suficiente para verificarlas; no agregues bibliografía falsa.\n11. Evita explicaciones sobre lo que hiciste. Devuelve únicamente el contenido final de la sección, listo para pegar.\n\nCAMPOS DISPONIBLES\n${available||'- No hay campos dinámicos adicionales configurados.'}\n\nCONTENIDO ACTUAL\n---\n${current||'[La sección está vacía]'}\n---\n\nENTREGA\nDevuelve exclusivamente la versión final de la sección \"${section.label}\". Conserva los {{CAMPOS}} necesarios exactamente como aparecen.`;
+  }
+
+  async function copyPrompt(target:'template'|'content'){
+    const prompt=buildSectionPrompt(target);
+    await window.docUnits.clipboard.writeText(prompt);
+    setStatus('Prompt copiado');setTimeout(()=>setStatus(''),1800);
+  }
+
   async function requestPaste(target:'template'|'content'){
     const value=await window.docUnits.clipboard.readText();
     if(!value.trim()){setStatus('El portapapeles no contiene texto');setTimeout(()=>setStatus(''),1800);return;}
@@ -103,7 +124,7 @@ export function TextSection({section,ctx,designMode}:{section:SectionConfig;ctx:
     <button className="secondary" onClick={()=>insertField(target)}>Insertar</button>
   </div>;
 
-  const clipboardActions=(target:'template'|'content')=><div className="clipboard-actions"><button className="secondary compact" onClick={()=>copyText(target)}>Copiar</button><button className="secondary compact" onClick={()=>requestPaste(target)}>Pegar</button></div>;
+  const clipboardActions=(target:'template'|'content')=><div className="clipboard-actions"><button className="secondary compact prompt-copy-button" onClick={()=>copyPrompt(target)}>Copiar prompt</button><button className="secondary compact" onClick={()=>copyText(target)}>Copiar</button><button className="secondary compact" onClick={()=>requestPaste(target)}>Pegar</button></div>;
 
   const pasteModal=pasteCandidate!==null?<div className="modal-backdrop"><div className="modal-card"><h2>Pegar texto</h2><p>Esta sección ya tiene contenido. Elige cómo deseas incorporar el texto del portapapeles.</p><div className="paste-preview">{pasteCandidate.slice(0,600)}{pasteCandidate.length>600?'…':''}</div><div className="modal-actions"><button className="secondary" onClick={()=>setPasteCandidate(null)}>Cancelar</button><button className="secondary" onClick={()=>applyPaste('append')}>Agregar al final</button><button onClick={()=>applyPaste('replace')}>Reemplazar contenido</button></div></div></div>:null;
 
