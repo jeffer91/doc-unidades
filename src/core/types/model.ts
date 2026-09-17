@@ -19,6 +19,7 @@ export type SummaryItemConfig = {
   columns: MatrixColumn[];
   required?: boolean;
   sectionId?: string;
+  includeInPdf?: boolean;
 };
 
 export type FieldFilter = {
