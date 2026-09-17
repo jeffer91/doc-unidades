@@ -1,15 +1,16 @@
 import React,{useEffect,useRef,useState} from 'react';
 import * as XLSX from 'xlsx';
 import type { SectionConfig } from '../core/types/model';
+import { invalidateMatrixFieldCache, loadAllMatrixData } from '../core/fields/fieldEngine';
 
 export function MatrixSection({section,ctx}:{section:SectionConfig;ctx:any}){
   const [rows,setRows]=useState<any[]>([]); const [loading,setLoading]=useState(false); const [message,setMessage]=useState(''); const inputRef=useRef<HTMLInputElement>(null);
   const cols=section.columns ?? []; const matrixId=section.matrixId!; const key=JSON.stringify([ctx.period?.id,ctx.unit,ctx.process.id,ctx.document.id,matrixId]);
-  async function load(){if(!ctx.period)return;setLoading(true);const r=await window.docUnits.matrices.list({periodId:ctx.period.id,unitId:ctx.unit,processId:ctx.process.id,documentId:ctx.document.id,matrixId,limit:500});setRows(r.map((x:any)=>({...x.data,__id:x.id})));setLoading(false)}
+  async function load(){if(!ctx.period)return;setLoading(true);invalidateMatrixFieldCache();const r=await loadAllMatrixData({periodId:ctx.period.id,unitId:ctx.unit,processId:ctx.process.id,documentId:ctx.document.id,matrixId});setRows(r);setLoading(false)}
   useEffect(()=>{load()},[key]);
   function add(){const row:any={};cols.forEach(c=>row[c.key]='');setRows([...rows,row])}
   function update(i:number,k:string,v:string){const copy=[...rows];copy[i]={...copy[i],[k]:v};setRows(copy)}
-  async function save(){const clean=rows.map(({__id,...r})=>r);await window.docUnits.matrices.replace({periodId:ctx.period.id,unitId:ctx.unit,processId:ctx.process.id,documentId:ctx.document.id,matrixId,rows:clean,sourceName:'edición-app'});setMessage(`${clean.length} registros guardados`);await load();setTimeout(()=>setMessage(''),1800)}
+  async function save(){const clean=rows.map(({__id,...r})=>r);await window.docUnits.matrices.replace({periodId:ctx.period.id,unitId:ctx.unit,processId:ctx.process.id,documentId:ctx.document.id,matrixId,rows:clean,sourceName:'edición-app'});invalidateMatrixFieldCache();setMessage(`${clean.length} registros guardados`);await load();setTimeout(()=>setMessage(''),1800)}
   function validate(inRows:any[]){const errors:string[]=[];inRows.forEach((r,i)=>cols.forEach(c=>{if(c.required && String(r[c.key]??'').trim()==='')errors.push(`Fila ${i+2}: falta ${c.label}`);if(c.options && r[c.key] && !c.options.includes(String(r[c.key])))errors.push(`Fila ${i+2}: ${c.label} no es válido`)}));return errors}
   async function importFile(file:File){const buf=await file.arrayBuffer();const wb=XLSX.read(buf);const ws=wb.Sheets[wb.SheetNames[0]];const data=XLSX.utils.sheet_to_json(ws,{defval:''}) as any[];const errors=validate(data);if(errors.length){setMessage(`No se guardó. ${errors.slice(0,3).join(' · ')}${errors.length>3?' …':''}`);return;}setRows(data);setMessage(`${data.length} filas analizadas. Pulsa Guardar para aplicar.`)}
   function exportCurrent(){const data=rows.map(({__id,...r})=>r);const ws=XLSX.utils.json_to_sheet(data.length?data:[Object.fromEntries(cols.map(c=>[c.key,'']))],{header:cols.map(c=>c.key)});const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'DATOS');XLSX.writeFile(wb,`${matrixId.replaceAll('.','_')}.xlsx`)}
