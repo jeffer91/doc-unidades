@@ -289,7 +289,14 @@ export function listMatrixRows(args: any) {
 export function replaceMatrixRows(args: any) {
   const database = getDb();
   const rows: any[] = Array.isArray(args.rows) ? args.rows : [];
+  const batchId=`${Date.now()}-${Math.random().toString(36).slice(2,10)}`;
   const tx = database.transaction(() => {
+    const stage=database.prepare(`
+      INSERT INTO staging_rows(batch_id,period_id,unit_id,process_id,document_id,matrix_id,row_number,row_json,validation_status,validation_message)
+      VALUES(?,?,?,?,?,?,?,?,?,?)
+    `);
+    rows.forEach((row,index)=>stage.run(batchId,args.periodId,args.unitId,args.processId,args.documentId,args.matrixId,index+2,JSON.stringify(row),'VALID',null));
+
     database.prepare(`DELETE FROM matrix_rows WHERE period_id=? AND unit_id=? AND process_id=? AND document_id=? AND matrix_id=?`)
       .run(args.periodId,args.unitId,args.processId,args.documentId,args.matrixId);
     const insert = database.prepare(`
@@ -306,8 +313,8 @@ export function replaceMatrixRows(args: any) {
     `).run(args.periodId,args.unitId,args.processId,args.documentId,args.matrixId,args.sourceName ?? 'manual',rows.length,rows.length,0);
   });
   tx();
-  logHistory(args, 'MATRIX_REPLACE', `${args.matrixId}: ${rows.length} filas`);
-  return { saved: rows.length };
+  logHistory(args, 'MATRIX_REPLACE', `${args.matrixId}: ${rows.length} filas · staging ${batchId}`);
+  return { saved: rows.length, batchId };
 }
 
 export function upsertMatrixRow(args: any) {
