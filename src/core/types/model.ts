@@ -1,5 +1,6 @@
 export type UnitId = 'UGPA' | 'UTET';
-export type SectionKind = 'info' | 'text' | 'matrix';
+export type DocumentType = 'RGI' | 'INF';
+export type SectionKind = 'info' | 'text' | 'matrix' | 'cover';
 
 export type MatrixColumn = {
   key: string;
@@ -18,6 +19,17 @@ export type SummaryItemConfig = {
   sectionId?: string;
 };
 
+export type CoverSettings = {
+  type: DocumentType;
+  code: string;
+  documentName: string;
+  title: string;
+  subtitle: string;
+  complementaryData: string;
+  version: string;
+  elaborationDate: string;
+};
+
 export type SectionConfig = {
   id: string;
   label: string;
@@ -31,6 +43,7 @@ export type DocumentConfig = {
   id: string;
   label: string;
   code?: string;
+  documentType?: DocumentType;
   sections: SectionConfig[];
   summaryItems?: SummaryItemConfig[];
 };
