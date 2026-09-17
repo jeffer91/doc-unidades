@@ -1,4 +1,4 @@
-import type { FieldDefinition, FieldFilter } from '../types/model';
+import type { FieldDefinition, FieldFilter, MatrixColumn } from '../types/model';
 import { interpolate } from '../templates/interpolate';
 
 export type RenderedFields = {
@@ -25,7 +25,13 @@ function matches(row:any,filter?:FieldFilter){
   if(filter.notEquals!==undefined&&norm(value)===norm(filter.notEquals))return false;
   return true;
 }
-function numberValue(value:any){if(typeof value==='number')return Number.isFinite(value)?value:NaN;const cleaned=String(value??'').trim().replace('%','').replace(/\s/g,'').replace(',','.');return Number(cleaned);}
+function numberValue(value:any){
+  if(typeof value==='number')return Number.isFinite(value)?value:NaN;
+  let cleaned=String(value??'').trim().replace('%','').replace(/\s/g,'');
+  if(cleaned.includes(',')&&cleaned.includes('.'))cleaned=cleaned.replace(/\./g,'').replace(',','.');
+  else cleaned=cleaned.replace(',','.');
+  return Number(cleaned);
+}
 function formatNumber(value:number,decimals=0){if(!Number.isFinite(value))return '';return new Intl.NumberFormat('es-EC',{minimumFractionDigits:decimals,maximumFractionDigits:decimals}).format(value);}
 
 const matrixCache=new Map<string,Promise<any[]>>();
@@ -36,19 +42,61 @@ export async function loadAllMatrixData(args:{periodId:number;unitId:string;proc
 }
 export function invalidateMatrixFieldCache(){matrixCache.clear();}
 
+function sourceColumns(def:FieldDefinition,ctx:any):MatrixColumn[]{
+  if(!def.source)return [];
+  const sourceProcessId=def.source.processId??ctx.process.id;
+  if(sourceProcessId!==ctx.process.id)return [];
+  const sourceDocumentId=def.source.documentId??ctx.document.id;
+  const sourceDocument=ctx.process.documents?.find((d:any)=>d.id===sourceDocumentId);
+  if(!sourceDocument)return [];
+  const summary=sourceDocument.summaryItems?.find((i:any)=>i.matrixId===def.source!.matrixId);
+  if(summary?.columns?.length)return summary.columns;
+  const section=sourceDocument.sections?.find((s:any)=>s.matrixId===def.source!.matrixId);
+  return section?.columns??[];
+}
+
+function rowIsValid(row:any,columns:MatrixColumn[]){
+  if(!columns.length)return true;
+  for(const column of columns){
+    const value=String(row?.[column.key]??'').trim();
+    if(column.required&&!value)return false;
+    if(column.options&&value&&!column.options.includes(value))return false;
+  }
+  return true;
+}
+
 async function resolveDefinition(def:FieldDefinition,ctx:any):Promise<string>{
   if(def.kind==='system'||!def.source||!def.operation)return '';
-  const rows=await loadAllMatrixData({periodId:ctx.period.id,unitId:def.source.unitId??ctx.unit,processId:def.source.processId??ctx.process.id,documentId:def.source.documentId??ctx.document.id,matrixId:def.source.matrixId});
-  if(rows.length===0)return '';
+  const sourceArgs={periodId:ctx.period.id,unitId:def.source.unitId??ctx.unit,processId:def.source.processId??ctx.process.id,documentId:def.source.documentId??ctx.document.id,matrixId:def.source.matrixId};
+  const sourceRows=await loadAllMatrixData(sourceArgs);
+  if(sourceRows.length===0)return '';
+
+  const schema=sourceColumns(def,ctx);
+  if(schema.length&&sourceRows.some(r=>!rowIsValid(r,schema)))return '';
+
+  const rows=sourceRows.filter(r=>rowIsValid(r,schema));
   const filtered=rows.filter(r=>matches(r,def.filter));const decimals=def.decimals??0;
   switch(def.operation){
     case 'value':{const row=filtered.find(r=>String(r?.[def.column??'']??'').trim()!=='');return row?String(row[def.column??'']??'').trim():'';}
     case 'count': return formatNumber(filtered.length,0);
-    case 'count_unique':{if(!def.column)return '';const values=new Set(filtered.map(r=>String(r?.[def.column!]??'').trim()).filter(Boolean));return formatNumber(values.size,0);}
-    case 'percentage_where':{const denominator=rows.filter(r=>matches(r,def.denominatorFilter));if(!denominator.length)return '';return formatNumber((filtered.length/denominator.length)*100,decimals);}
+    case 'count_unique':{
+      if(!def.column)return '';
+      const values=new Set(filtered.map(r=>norm(r?.[def.column!])).filter(Boolean));
+      return formatNumber(values.size,0);
+    }
+    case 'percentage_where':{
+      const denominator=rows.filter(r=>matches(r,def.denominatorFilter));
+      if(!denominator.length)return '';
+      return formatNumber((filtered.length/denominator.length)*100,decimals);
+    }
     case 'average':{if(!def.column)return '';const values=filtered.map(r=>numberValue(r?.[def.column!])).filter(Number.isFinite);if(!values.length)return '';return formatNumber(values.reduce((a,b)=>a+b,0)/values.length,decimals);}
     case 'sum':{if(!def.column)return '';const values=filtered.map(r=>numberValue(r?.[def.column!])).filter(Number.isFinite);if(!values.length)return '';return formatNumber(values.reduce((a,b)=>a+b,0),decimals);}
-    case 'join_unique':{if(!def.column)return '';const values=[...new Set(filtered.map(r=>String(r?.[def.column!]??'').trim()).filter(Boolean))];return values.join(def.separator??', ');}
+    case 'join_unique':{
+      if(!def.column)return '';
+      const seen=new Set<string>();const values:string[]=[];
+      for(const row of filtered){const raw=String(row?.[def.column!]??'').trim();const normalized=norm(raw);if(raw&&normalized&&!seen.has(normalized)){seen.add(normalized);values.push(raw);}}
+      return values.join(def.separator??', ');
+    }
   }
 }
 
