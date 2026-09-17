@@ -51,7 +51,7 @@ export function DocumentDraftButton({ctx}:{ctx:any}){
       for(const item of summaryItems){
         const rows=await loadAllMatrixData({periodId:ctx.period.id,unitId:ctx.unit,processId:ctx.process.id,documentId:ctx.document.id,matrixId:item.matrixId});
         if(item.required!==false&&(rows.length===0||validateRows(item,rows).length>0))pending.push(item.label);
-        if(!seenMatrices.has(item.matrixId)&&rows.length){
+        if(item.includeInPdf===true&&!seenMatrices.has(item.matrixId)&&rows.length){
           sections.push({kind:'matrix',label:item.label,columns:item.columns.map(c=>({key:c.key,label:c.label})),rows});
         }
       }
