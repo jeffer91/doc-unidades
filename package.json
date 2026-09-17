@@ -1,0 +1,42 @@
+{
+  "name": "doc-unidades",
+  "version": "0.1.0",
+  "private": true,
+  "description": "DOC-UNIDADES - gestión documental institucional local",
+  "main": "dist-electron/main.js",
+  "scripts": {
+    "dev": "concurrently -k \"vite\" \"wait-on http://127.0.0.1:5173 && cross-env VITE_DEV_SERVER_URL=http://127.0.0.1:5173 electron .\"",
+    "build:web": "vite build",
+    "build:electron": "tsc -p tsconfig.electron.json",
+    "build": "npm run build:web && npm run build:electron",
+    "start": "npm run build && electron .",
+    "package": "npm run build && electron-builder"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "latest",
+    "better-sqlite3": "latest",
+    "electron": "latest",
+    "react": "latest",
+    "react-dom": "latest",
+    "xlsx": "latest"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "latest",
+    "@types/node": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "concurrently": "latest",
+    "cross-env": "latest",
+    "electron-builder": "latest",
+    "typescript": "latest",
+    "vite": "latest",
+    "wait-on": "latest"
+  },
+  "build": {
+    "appId": "ec.edu.itsqmet.docunidades",
+    "productName": "DOC-UNIDADES",
+    "files": ["dist/**/*", "dist-electron/**/*", "package.json"],
+    "directories": {"buildResources": "resources"},
+    "win": {"target": "nsis"}
+  }
+}
