@@ -9,6 +9,8 @@
     "build:web": "vite build",
     "build:electron": "tsc -p tsconfig.electron.json",
     "build": "npm run build:web && npm run build:electron",
+    "rebuild:native": "electron-builder install-app-deps",
+    "postinstall": "npm run rebuild:native",
     "start": "npm run build && electron .",
     "package": "npm run build && electron-builder"
   },
