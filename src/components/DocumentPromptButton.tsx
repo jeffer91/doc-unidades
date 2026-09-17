@@ -1,5 +1,6 @@
 import React,{useState} from 'react';
 import { periodLabel } from '../core/templates/interpolate';
+import { collectDocumentMatrices } from '../core/document-blocks/documentStructure';
 import './DocumentPromptButton.css';
 
 export function DocumentPromptButton({ctx}:{ctx:any}){
@@ -11,21 +12,8 @@ export function DocumentPromptButton({ctx}:{ctx:any}){
       .map((s:any)=>`- ${s.label} (${s.kind})${s.required===false?' · opcional':''}`)
       .join('\n');
 
-    const matrixMap=new Map<string,{label:string;required:boolean;source:string}>();
-    for(const m of ctx.document.summaryItems??[]){
-      matrixMap.set(m.matrixId,{label:m.label,required:m.required!==false,source:'resumen'});
-    }
-    for(const s of ctx.document.sections??[]){
-      if(s.kind==='matrix'&&s.matrixId&&!matrixMap.has(s.matrixId)){
-        matrixMap.set(s.matrixId,{label:s.label,required:s.required!==false,source:'sección'});
-      }
-    }
-    for(const f of ctx.document.fields??[]){
-      const matrixId=f.source?.matrixId;
-      if(matrixId&&!matrixMap.has(matrixId))matrixMap.set(matrixId,{label:`Fuente de ${f.label}`,required:f.required!==false,source:'campo'});
-    }
-    const matrices=[...matrixMap.entries()]
-      .map(([id,m])=>`- ${m.label}: ${id} · ${m.required?'obligatoria':'opcional'} · origen ${m.source}`)
+    const matrices=collectDocumentMatrices(ctx.document)
+      .map(m=>`- ${m.label}: ${m.matrixId} · ${m.required?'obligatoria':'opcional'} · origen ${m.source}`)
       .join('\n');
 
     const fields=(ctx.document.fields??[])
