@@ -36,7 +36,10 @@ const entities:Record<string,string>={"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&qu
 function esc(value:any){return String(value??'').replace(/[&<>"']/g,ch=>entities[ch]??ch);}
 function safeName(value:string){return value.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9_-]+/g,'_').replace(/^_+|_+$/g,'').slice(0,80)||'documento';}
 function logoDataUrl(){
-  try{return `data:image/png;base64,${fs.readFileSync(resourcePath('logo.png')).toString('base64')}`;}catch{return '';}
+  for(const name of ['logo.png','icon.png']){
+    try{return `data:image/png;base64,${fs.readFileSync(resourcePath(name)).toString('base64')}`;}catch{}
+  }
+  return '';
 }
 function todayEs(){
   const months=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
@@ -46,7 +49,7 @@ function unitName(unit:string){return unit==='UTET'?'Unidad de Titulación y Efi
 function elaboratorRole(unit:string){return unit==='UTET'?'Coordinador de Titulación y Eficiencia Terminal':'Gestor de Procesos Académicos';}
 
 const baseCss=`
-  @page{size:A4;margin:15mm}*{box-sizing:border-box}html,body{margin:0;padding:0}body{font-family:Arial,Helvetica,sans-serif;color:#111;font-size:10pt;line-height:1.45;background:white}
+  @page{size:A4;margin:15mm}*{box-sizing:border-box}html,body{margin:0;padding:0}body{font-family:Arial,Helvetica,sans-serif;color:#111;font-size:11pt;line-height:1.6;background:white}
   .watermark{position:fixed;top:42%;left:0;right:0;text-align:center;transform:rotate(-28deg);font-size:62pt;font-weight:800;color:rgba(170,70,70,.10);z-index:-1;letter-spacing:.08em}
 `;
 
@@ -57,19 +60,22 @@ function buildCoverHtml(payload:any,totalPages:number){
   const rgiHeader=`<table class="rgi head"><colgroup><col style="width:4.5cm"><col style="width:9cm"><col style="width:4.5cm"></colgroup><tr><td rowspan="2" class="logo">${logo?`<img src="${logo}">`:''}</td><td class="unit">${esc(u)}</td><td rowspan="2" class="control"><b>Código:</b><br>${esc(code)}</td></tr><tr><td class="doc"><b>${esc(docName)}</b>${subtitle?`<br>${esc(subtitle)}`:''}${extra?`<br>${esc(extra)}`:''}</td></tr></table>`;
   const infHeader=`<table class="inf head"><colgroup><col style="width:4.8cm"><col style="width:9.5cm"><col style="width:3.7cm"></colgroup><tr><td rowspan="2" class="logo">${logo?`<img src="${logo}">`:''}</td><td rowspan="2" class="unit">${esc(u)}</td><td class="control"><b>Código:</b><br>${esc(code)}</td></tr><tr><td class="control"><b>Versión:</b><br>${esc(version)}</td></tr><tr><td class="control"><b>Fecha de elaboración:</b><br>${esc(date)}</td><td class="doc"><b>${esc(docName)}</b></td><td class="control"><b>Página 1 de ${totalPages}</b></td></tr></table>`;
   return `<!doctype html><html lang="es"><head><meta charset="utf-8"><style>${baseCss}
-    @page{margin:15mm}.page{height:267mm;display:flex;flex-direction:column}.head{width:18cm;border-collapse:collapse;table-layout:fixed}.head td{border:.5pt solid #000;padding:1mm;text-align:center;vertical-align:middle;font-size:9pt}.head .logo img{max-width:3.8cm;max-height:1.8cm;object-fit:contain}.head .unit{font-size:9pt}.head .doc{font-size:9pt}.rgi tr:first-child{height:.8cm}.rgi tr:nth-child(2){height:2cm}.inf tr:first-child{height:1.28cm}.inf tr:nth-child(2){height:.75cm}.inf tr:nth-child(3){height:1.22cm}.central{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:25mm 0 18mm}.central h1{font-size:18pt;line-height:1.25;margin:0;max-width:18cm}.central .sub{font-size:${type==='RGI'?'16pt':'14pt'};font-weight:700;margin-top:8pt}.central .extra{font-size:10.5pt;font-weight:700;margin-top:8pt}.sign{width:18cm;border-collapse:collapse;table-layout:fixed}.sign td{border:.5pt solid #000;width:6cm;padding:1mm;font-size:8.5pt;vertical-align:top}.sign .area{height:2.4cm;text-align:center;vertical-align:middle}.sign .name{height:.75cm}.sign .role{height:1.05cm}.draft-note{position:absolute;top:12mm;right:15mm;font-weight:700;color:#a24646}
+    @page{margin:15mm}.page{height:267mm;display:flex;flex-direction:column}.head{width:18cm;border-collapse:collapse;table-layout:fixed}.head td{border:.5pt solid #000;padding:1mm;text-align:center;vertical-align:middle;font-size:9pt;line-height:1.25}.head .logo img{max-width:3.8cm;max-height:1.8cm;object-fit:contain}.head .unit{font-size:9pt}.head .doc{font-size:9pt}.rgi tr:first-child{height:.8cm}.rgi tr:nth-child(2){height:2cm}.inf tr:first-child{height:1.28cm}.inf tr:nth-child(2){height:.75cm}.inf tr:nth-child(3){height:1.22cm}.central{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:25mm 0 18mm}.central h1{font-size:18pt;line-height:1.25;margin:0;max-width:18cm}.central .sub{font-size:${type==='RGI'?'16pt':'14pt'};font-weight:700;margin-top:8pt}.central .extra{font-size:10.5pt;font-weight:700;margin-top:8pt}.sign{width:18cm;border-collapse:collapse;table-layout:fixed}.sign td{border:.5pt solid #000;width:6cm;padding:1mm;font-size:8.5pt;line-height:1.25;vertical-align:top}.sign .area{height:2.4cm;text-align:center;vertical-align:middle}.sign .name{height:.75cm}.sign .role{height:1.05cm}.draft-note{position:absolute;top:12mm;right:15mm;font-weight:700;color:#a24646}
   </style></head><body>${payload.draft?'<div class="watermark">BORRADOR</div>':''}<div class="page">${payload.draft?'<div class="draft-note">BORRADOR</div>':''}${type==='INF'?infHeader:rgiHeader}<div class="central"><h1>${esc(title)}</h1>${subtitle?`<div class="sub">${esc(subtitle)}</div>`:''}${extra?`<div class="extra">${esc(extra)}</div>`:''}</div><table class="sign"><tr><td class="area">ELABORADO POR:<br><b>ÁREA DE FIRMA / QR DIGITAL</b></td><td class="area">REVISADO POR:<br><b>ÁREA DE FIRMA / QR DIGITAL</b></td><td class="area">APROBADO POR:<br><b>ÁREA DE FIRMA / QR DIGITAL</b></td></tr><tr><td class="name"><b>NOMBRE:</b> Mgs. Jefferson Villarreal</td><td class="name"><b>NOMBRE:</b> Ing. Martha Tomalá</td><td class="name"><b>NOMBRE:</b> Dr. Alex León</td></tr><tr><td class="role"><b>CARGO:</b> ${esc(role)}</td><td class="role"><b>CARGO:</b> Coordinadora General de Carreras</td><td class="role"><b>CARGO:</b> Vicerrector</td></tr></table></div></body></html>`;
 }
 
 function buildSectionHtml(section:any,payload:any){
   let body='';
-  if(section.kind==='text')body=`<div class="text">${esc(section.text).replace(/\n/g,'<br>')}</div>`;
-  else{
+  if(section.kind==='text'){
+    body=`<div class="text">${esc(section.text).replace(/\n/g,'<br>')}</div>`;
+  }else if(section.kind==='chart'||section.kind==='figure'){
+    body=`<div class="apa-number"><b>Figura ${section.figureNumber??1}</b></div><div class="apa-title"><i>${esc(section.title??section.label)}</i></div><div class="figure">${section.svg??'<div class="pending">Figura pendiente de datos o renderizado.</div>'}</div>${section.note?`<div class="apa-note"><i>Nota.</i> ${esc(section.note)}</div>`:''}`;
+  }else{
     const cols=(section.columns??[]) as any[];const rows=(section.rows??[]) as any[];
-    body=`<table><thead><tr>${cols.map(c=>`<th>${esc(c.label)}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr>${cols.map(c=>`<td>${esc(r[c.key])}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+    body=`<div class="apa-number"><b>Tabla ${section.tableNumber??1}</b></div><div class="apa-title"><i>${esc(section.title??section.label)}</i></div><table class="apa-table"><thead><tr>${cols.map(c=>`<th>${esc(c.label)}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr>${cols.map(c=>`<td>${esc(r[c.key])}</td>`).join('')}</tr>`).join('')}</tbody></table><div class="apa-note"><i>Nota.</i> Datos obtenidos de los registros institucionales del período ${esc(payload.period)}.</div>`;
   }
   return `<!doctype html><html lang="es"><head><meta charset="utf-8"><style>${baseCss}
-    h1{font-size:16pt;margin:0 0 10mm;color:#1f2a38} .text{text-align:justify;white-space:normal}table{width:100%;border-collapse:collapse;table-layout:auto;font-size:8.5pt}th,td{border:.5pt solid #000;padding:1.5mm;vertical-align:top}th{background:#f1f3f5;text-align:left}.pending{background:#fff7e6;border:1px solid #ead39a;padding:3mm;margin-bottom:7mm}.footer{margin-top:10mm;border-top:.5pt solid #bbb;padding-top:2mm;color:#777;font-size:8pt}
+    h1{font-size:16pt;margin:0 0 10mm;color:#1f2a38}.text{text-align:justify;white-space:normal;line-height:2}.apa-number{margin-top:2mm;margin-bottom:1mm;font-size:10.5pt}.apa-title{margin-bottom:3mm;font-size:10.5pt}.apa-table{width:100%;border-collapse:collapse;table-layout:auto;font-size:9pt;line-height:1.25;border-top:1pt solid #000;border-bottom:1pt solid #000}.apa-table th,.apa-table td{border:0;padding:1.5mm;vertical-align:top}.apa-table thead th{border-bottom:.75pt solid #000;text-align:left;font-weight:700}.apa-table tbody tr:last-child td{border-bottom:0}.apa-note{margin-top:2mm;font-size:9pt;line-height:1.35}.figure{width:100%;display:flex;justify-content:center;align-items:center;margin:3mm 0}.figure svg{max-width:100%;height:auto}.pending{background:#fff7e6;border:1px solid #ead39a;padding:3mm;margin-bottom:7mm}.footer{margin-top:10mm;border-top:.5pt solid #bbb;padding-top:2mm;color:#777;font-size:8pt;line-height:1.2}
   </style></head><body>${payload.draft?'<div class="watermark">BORRADOR</div>':''}<h1>${esc(section.label)}</h1>${body}<div class="footer">${esc(payload.title)} · ${esc(payload.period)}${payload.draft?' · BORRADOR':''}</div></body></html>`;
 }
 
@@ -100,7 +106,12 @@ async function generatePdf(payload:any){
   const choice=await dialog.showSaveDialog({title:payload.draft?'Guardar borrador PDF':'Guardar PDF final',defaultPath,filters:[{name:'PDF',extensions:['pdf']}]});
   if(choice.canceled||!choice.filePath)return {saved:false};
 
-  const sections=(payload.sections??[]) as any[];
+  let tableNumber=0;let figureNumber=0;
+  const sections=((payload.sections??[]) as any[]).map(section=>{
+    if(section.kind==='matrix')return {...section,tableNumber:++tableNumber};
+    if(section.kind==='chart'||section.kind==='figure')return {...section,figureNumber:++figureNumber};
+    return section;
+  });
   const pending=(payload.pending??[]) as string[];
   const sectionPdfs:Uint8Array[]=[];const counts:number[]=[];
   for(const section of sections){const bytes=await htmlToPdf(buildSectionHtml(section,payload));sectionPdfs.push(bytes);counts.push(await pageCount(bytes));}
