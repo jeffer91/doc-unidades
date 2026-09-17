@@ -101,6 +101,80 @@ function migrate(database: Database.Database) {
     CREATE INDEX IF NOT EXISTS idx_matrix_row_key
       ON matrix_rows(period_id, matrix_id, row_key);
 
+    CREATE TABLE IF NOT EXISTS staging_rows (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      batch_id TEXT NOT NULL,
+      period_id INTEGER NOT NULL,
+      unit_id TEXT NOT NULL,
+      process_id TEXT NOT NULL,
+      document_id TEXT NOT NULL,
+      matrix_id TEXT NOT NULL,
+      row_number INTEGER,
+      row_json TEXT NOT NULL,
+      validation_status TEXT NOT NULL DEFAULT 'PENDING',
+      validation_message TEXT,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY(period_id) REFERENCES core_periodos(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_staging_context
+      ON staging_rows(batch_id, period_id, unit_id, process_id, document_id, matrix_id, id);
+
+    CREATE TABLE IF NOT EXISTS document_files (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      period_id INTEGER,
+      unit_id TEXT NOT NULL,
+      process_id TEXT NOT NULL,
+      document_id TEXT NOT NULL,
+      section_id TEXT,
+      file_type TEXT NOT NULL,
+      original_name TEXT NOT NULL,
+      relative_path TEXT NOT NULL,
+      sha256 TEXT,
+      size_bytes INTEGER,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY(period_id) REFERENCES core_periodos(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_files_context
+      ON document_files(period_id, unit_id, process_id, document_id, section_id, file_type);
+
+    CREATE TABLE IF NOT EXISTS document_versions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      period_id INTEGER NOT NULL,
+      unit_id TEXT NOT NULL,
+      process_id TEXT NOT NULL,
+      document_id TEXT NOT NULL,
+      version_number INTEGER NOT NULL,
+      status TEXT NOT NULL,
+      snapshot_json TEXT NOT NULL,
+      pdf_relative_path TEXT,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(period_id, unit_id, process_id, document_id, version_number),
+      FOREIGN KEY(period_id) REFERENCES core_periodos(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_versions_context
+      ON document_versions(period_id, unit_id, process_id, document_id, version_number DESC);
+
+    CREATE TABLE IF NOT EXISTS connector_runs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      period_id INTEGER,
+      unit_id TEXT,
+      process_id TEXT,
+      document_id TEXT,
+      connector_id TEXT NOT NULL,
+      source_name TEXT,
+      status TEXT NOT NULL DEFAULT 'PENDING',
+      read_rows INTEGER NOT NULL DEFAULT 0,
+      accepted_rows INTEGER NOT NULL DEFAULT 0,
+      rejected_rows INTEGER NOT NULL DEFAULT 0,
+      detail TEXT,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      finished_at TEXT,
+      FOREIGN KEY(period_id) REFERENCES core_periodos(id) ON DELETE SET NULL
+    );
+
     CREATE TABLE IF NOT EXISTS import_log (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       period_id INTEGER NOT NULL,
