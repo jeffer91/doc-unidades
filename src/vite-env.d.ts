@@ -13,6 +13,7 @@ declare global {
         remove(id:number): Promise<boolean>;
       };
       pdf: { generate(args:any): Promise<{saved:boolean;path?:string}> };
+      clipboard: { readText(): Promise<string>; writeText(text:string): Promise<boolean> };
       stats(args:any): Promise<{rows:number}>;
       system: { dataRoot(): Promise<string> };
     }
