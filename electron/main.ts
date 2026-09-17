@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, ipcMain } from 'electron';
+import { app, BrowserWindow, clipboard, dialog, ipcMain } from 'electron';
 import fs from 'node:fs';
 import path from 'node:path';
 import { PDFDocument } from 'pdf-lib';
@@ -131,6 +131,8 @@ app.whenReady().then(() => {
   ipcMain.handle('matrices:upsert', (_e, args) => upsertMatrixRow(args));
   ipcMain.handle('matrices:remove', (_e, id) => deleteMatrixRow(id));
   ipcMain.handle('pdf:generate', (_e,args)=>generatePdf(args));
+  ipcMain.handle('clipboard:read-text', () => clipboard.readText());
+  ipcMain.handle('clipboard:write-text', (_e,text:string) => {clipboard.writeText(String(text??''));return true;});
   ipcMain.handle('stats:get', (_e, args) => getStats(args));
   ipcMain.handle('system:data-root', () => getDataRoot());
   createWindow();
