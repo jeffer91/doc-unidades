@@ -8,8 +8,8 @@ export const formacionProcess: ProcessConfig = {
     {
       id: 'DNF', label: 'Detección de Necesidades', code: 'UGPA-RGI1-01-PRO-31',
       fields:[
-        {key:'TOTAL_CARRERAS',label:'Total de carreras',group:'Carreras',kind:'compound',operation:'count',source:{matrixId:'FORM.DNF.CARRERAS'}},
-        {key:'TOTAL_CARRERAS_ACTIVAS',label:'Total de carreras activas',group:'Carreras',kind:'compound',operation:'count',source:{matrixId:'FORM.DNF.CARRERAS'},filter:{column:'ESTADO_PERIODO',equals:'Activa'}},
+        {key:'TOTAL_CARRERAS',label:'Total de carreras',group:'Carreras',kind:'compound',operation:'count_unique',source:{matrixId:'FORM.DNF.CARRERAS'},column:'CARRERA'},
+        {key:'TOTAL_CARRERAS_ACTIVAS',label:'Total de carreras activas',group:'Carreras',kind:'compound',operation:'count_unique',source:{matrixId:'FORM.DNF.CARRERAS'},column:'CARRERA',filter:{column:'ESTADO_PERIODO',equals:'Activa'}},
         {key:'TOTAL_NECESIDADES',label:'Total de necesidades de formación',group:'Necesidades',kind:'compound',operation:'count',source:{matrixId:'FORM.DNF.NECESIDADES'}},
         {key:'TOTAL_CARRERAS_CON_NECESIDADES',label:'Carreras con necesidades',group:'Necesidades',kind:'compound',operation:'count_unique',source:{matrixId:'FORM.DNF.NECESIDADES'},column:'CARRERA'},
         {key:'PORCENTAJE_PRIORIDAD_ALTA',label:'Porcentaje de necesidades con prioridad alta',group:'Necesidades',kind:'compound',operation:'percentage_where',source:{matrixId:'FORM.DNF.NECESIDADES'},filter:{column:'PRIORIDAD_MANUAL',equals:'Alta'},decimals:1},
