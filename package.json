@@ -40,8 +40,7 @@
     "productName": "DOC-UNIDADES",
     "files": ["dist/**/*", "dist-electron/**/*", "package.json"],
     "extraResources": [
-      {"from":"resources/icon.png","to":"icon.png"},
-      {"from":"resources/logo.png","to":"logo.png"}
+      {"from":"resources/icon.png","to":"icon.png"}
     ],
     "directories": {
       "buildResources": "resources",
