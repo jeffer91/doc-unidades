@@ -2,9 +2,9 @@ import React,{useEffect,useMemo,useRef,useState} from 'react';
 import * as XLSX from 'xlsx';
 import type { MatrixColumn, SummaryItemConfig } from '../core/types/model';
 import { interpolate, periodLabel } from '../core/templates/interpolate';
+import { loadCoverSettings } from '../core/cover/cover';
 
 type ItemState={rows:any[];errors:string[]};
-
 type Props={ctx:any;onOpenSection:(sectionId:string)=>void};
 
 function blankRow(columns:MatrixColumn[]){return Object.fromEntries(columns.map(c=>[c.key,'']));}
@@ -90,7 +90,7 @@ export function SummarySection({ctx,onOpenSection}:Props){
     const out:any[]=[];
     const seenMatrices=new Set<string>();
     for(const section of ctx.document.sections){
-      if(section.kind==='info')continue;
+      if(section.kind==='info'||section.kind==='cover')continue;
       if(section.kind==='text'){
         const scope={unitId:ctx.unit,processId:ctx.process.id,documentId:ctx.document.id,sectionId:section.id};
         const [saved,tpl]=await Promise.all([window.docUnits.sections.get({...scope,periodId:ctx.period.id}),window.docUnits.templates.get(scope)]);
@@ -113,8 +113,8 @@ export function SummarySection({ctx,onOpenSection}:Props){
   async function generatePdf(draft:boolean){
     setGenerating(true);setMessage('Preparando PDF…');
     try{
-      const sections=await collectPdfSections();
-      const result=await window.docUnits.pdf.generate({draft,title:ctx.document.label,code:ctx.document.code??'',unit:ctx.unit,process:ctx.process.label,period:periodLabel(ctx.period),pending:pending.map(i=>i.label),sections});
+      const [sections,cover]=await Promise.all([collectPdfSections(),loadCoverSettings(ctx)]);
+      const result=await window.docUnits.pdf.generate({draft,title:ctx.document.label,code:cover.code||ctx.document.code||'',unit:ctx.unit,process:ctx.process.label,period:periodLabel(ctx.period),cover,pending:pending.map(i=>i.label),sections});
       setMessage(result.saved?`${draft?'Borrador':'PDF final'} guardado correctamente.`:'Generación cancelada.');
     }catch(err:any){setMessage(err?.message??'No se pudo generar el PDF.');}
     finally{setGenerating(false);}
