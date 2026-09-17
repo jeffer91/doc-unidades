@@ -30,20 +30,25 @@ export function CoverSection({ctx}:{ctx:any}){
   const role=elaboratorRole(ctx.unit);
   const isInf=cover.type==='INF';
   const previewClass=useMemo(()=>`cover-preview ${isInf?'inf':'rgi'}`,[isInf]);
-  function set<K extends keyof CoverSettings>(key:K,value:CoverSettings[K]){setCover(old=>({...old,[key]:value}));}
+  function updateCover<K extends keyof CoverSettings>(field:K,value:CoverSettings[K]){setCover(old=>({...old,[field]:value}));}
 
   return <div className="work-card cover-editor-card">
     <div className="section-heading"><div><h2>Portada</h2><p>Configuración exclusiva de la portada institucional. Se usa tanto en borradores como en documentos finales.</p></div><span className="save-state">{status}</span></div>
     <div className="cover-editor-grid">
       <div className="cover-fields">
-        <label>Tipo documental<select value={cover.type} onChange={e=>set('type',e.target.value as CoverSettings['type'])}><option value="RGI">RGI</option><option value="INF">INF</option></select></label>
+        <label>Tipo documental<select value={cover.type} onChange={e=>updateCover('type',e.target.value as CoverSettings['type'])}><option value="RGI">RGI</option><option value="INF">INF</option></select></label>
         <label>Unidad responsable<input value={unitName} readOnly/></label>
-        <label>Código<input value={cover.code} onChange={e=>set('code',e.target.value)}/></label>
-        <label>Nombre formal del documento<input value={cover.documentName} onChange={e=>set('documentName',e.target.value)}/></label>
-        <label>Título central<textarea value={cover.title} onChange={e=>set('title',e.target.value)} rows={3}/></label>
-        <label>Subtítulo / período<input value={cover.subtitle} onChange={e=>set('subtitle',e.target.value)}/></label>
-        <label>Datos complementarios<textarea value={cover.complementaryData} onChange={e=>set('complementaryData',e.target.value)} rows={3} placeholder="Docente, carrera u otros datos cuando corresponda"/></label>
-        {isInf&&<><label>Versión<input value={cover.version} onChange={e=>set('version',e.target.value)}/></label><label>Fecha de elaboración<input value={cover.elaborationDate} onChange={e=>set('elaborationDate',e.target.value)}/></>}
+        <label>Código<input value={cover.code} onChange={e=>updateCover('code',e.target.value)}/></label>
+        <label>Nombre formal del documento<input value={cover.documentName} onChange={e=>updateCover('documentName',e.target.value)}/></label>
+        <label>Título central<textarea value={cover.title} onChange={e=>updateCover('title',e.target.value)} rows={3}/></label>
+        <label>Subtítulo / período<input value={cover.subtitle} onChange={e=>updateCover('subtitle',e.target.value)}/></label>
+        <label>Datos complementarios<textarea value={cover.complementaryData} onChange={e=>updateCover('complementaryData',e.target.value)} rows={3} placeholder="Docente, carrera u otros datos cuando corresponda"/></label>
+        {isInf ? (
+          <>
+            <label>Versión<input value={cover.version} onChange={e=>updateCover('version',e.target.value)}/></label>
+            <label>Fecha de elaboración<input value={cover.elaborationDate} onChange={e=>updateCover('elaborationDate',e.target.value)}/></label>
+          </>
+        ) : null}
         <div className="cover-note"><strong>Índice automático</strong><span>Los documentos RGI e INF generan el índice automáticamente al exportar el PDF, con las secciones y sus páginas reales.</span></div>
       </div>
       <div className={previewClass}>
