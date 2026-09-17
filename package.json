@@ -38,7 +38,10 @@
     "appId": "ec.edu.itsqmet.docunidades",
     "productName": "DOC-UNIDADES",
     "files": ["dist/**/*", "dist-electron/**/*", "package.json"],
-    "directories": {"buildResources": "resources"},
+    "directories": {
+      "buildResources": "resources",
+      "output": "release"
+    },
     "win": {"target": "nsis"}
   }
 }
