@@ -7,6 +7,7 @@ import {
   getActiveTemplate, saveTemplate, listMatrixRows, replaceMatrixRows,
   upsertMatrixRow, deleteMatrixRow, getStats, getDataRoot
 } from './database';
+import { saveFinalDocumentVersion } from './versions';
 
 function resourcePath(name:string){
   return app.isPackaged ? path.join(process.resourcesPath,name) : path.join(__dirname,'..','resources',name);
@@ -127,6 +128,16 @@ async function generatePdf(payload:any){
   const coverBytes=await htmlToPdf(buildCoverHtml(payload,totalPages));
   const merged=await mergePdfs([coverBytes,tocBytes,...sectionPdfs]);
   fs.writeFileSync(choice.filePath,merged);
+  if(!payload.draft){
+    saveFinalDocumentVersion({
+      ...payload,
+      unitId:payload.unitId??payload.unit,
+      processId:payload.processId,
+      documentId:payload.documentId,
+      filePath:choice.filePath,
+      sections
+    });
+  }
   return {saved:true,path:choice.filePath,totalPages};
 }
 
