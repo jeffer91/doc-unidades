@@ -7,6 +7,17 @@ export type RenderedFields = {
   resolved: Record<string,string>;
 };
 
+export type FieldInspection = {
+  key: string;
+  label: string;
+  kind: string;
+  status: 'resolved' | 'pending';
+  value: string;
+  source: string;
+  operation: string;
+  reason: string;
+};
+
 const SYSTEM_FIELDS:FieldDefinition[]=[
   {key:'PERIODO',label:'Período',group:'Datos generales',kind:'system',required:true},
   {key:'UNIDAD',label:'Unidad responsable',group:'Datos generales',kind:'system',required:true},
@@ -33,6 +44,8 @@ function numberValue(value:any){
   return Number(cleaned);
 }
 function formatNumber(value:number,decimals=0){if(!Number.isFinite(value))return '';return new Intl.NumberFormat('es-EC',{minimumFractionDigits:decimals,maximumFractionDigits:decimals}).format(value);}
+function templateContext(ctx:any){return {period:ctx.period,unit:ctx.unit,processLabel:ctx.process.label,documentLabel:ctx.document.label};}
+function extractTokens(template:string){return [...new Set([...template.matchAll(/{{\s*([A-Z0-9_]+)\s*}}/g)].map(m=>m[1]))];}
 
 const matrixCache=new Map<string,Promise<any[]>>();
 export async function loadAllMatrixData(args:{periodId:number;unitId:string;processId:string;documentId:string;matrixId:string}){
@@ -65,51 +78,87 @@ function rowIsValid(row:any,columns:MatrixColumn[]){
   return true;
 }
 
-async function resolveDefinition(def:FieldDefinition,ctx:any):Promise<string>{
-  if(def.kind==='system'||!def.source||!def.operation)return '';
+function systemValue(def:FieldDefinition,ctx:any){
+  return interpolate(`{{${def.key}}}`,templateContext(ctx));
+}
+
+async function resolveDefinitionDetailed(def:FieldDefinition,ctx:any):Promise<{value:string;reason:string}>{
+  if(def.kind==='system'){
+    const value=systemValue(def,ctx);
+    return {value,reason:value?'':'No existe el contexto requerido.'};
+  }
+  if(!def.source||!def.operation)return {value:'',reason:'El campo no tiene fuente u operación configurada.'};
   const sourceArgs={periodId:ctx.period.id,unitId:def.source.unitId??ctx.unit,processId:def.source.processId??ctx.process.id,documentId:def.source.documentId??ctx.document.id,matrixId:def.source.matrixId};
   const sourceRows=await loadAllMatrixData(sourceArgs);
-  if(sourceRows.length===0)return '';
+  if(sourceRows.length===0)return {value:'',reason:`Sin registros en ${def.source.matrixId}.`};
 
   const schema=sourceColumns(def,ctx);
-  if(schema.length&&sourceRows.some(r=>!rowIsValid(r,schema)))return '';
+  if(schema.length&&sourceRows.some(r=>!rowIsValid(r,schema)))return {value:'',reason:`${def.source.matrixId} contiene registros incompletos o inválidos.`};
 
   const rows=sourceRows.filter(r=>rowIsValid(r,schema));
   const filtered=rows.filter(r=>matches(r,def.filter));const decimals=def.decimals??0;
+  let value='';
   switch(def.operation){
-    case 'value':{const row=filtered.find(r=>String(r?.[def.column??'']??'').trim()!=='');return row?String(row[def.column??'']??'').trim():'';}
-    case 'count': return formatNumber(filtered.length,0);
+    case 'value':{const row=filtered.find(r=>String(r?.[def.column??'']??'').trim()!=='');value=row?String(row[def.column??'']??'').trim():'';break;}
+    case 'count': value=formatNumber(filtered.length,0);break;
     case 'count_unique':{
-      if(!def.column)return '';
-      const values=new Set(filtered.map(r=>norm(r?.[def.column!])).filter(Boolean));
-      return formatNumber(values.size,0);
+      if(def.column){const values=new Set(filtered.map(r=>norm(r?.[def.column!]??'')).filter(Boolean));value=formatNumber(values.size,0);}break;
     }
     case 'percentage_where':{
       const denominator=rows.filter(r=>matches(r,def.denominatorFilter));
-      if(!denominator.length)return '';
-      return formatNumber((filtered.length/denominator.length)*100,decimals);
+      if(denominator.length)value=formatNumber((filtered.length/denominator.length)*100,decimals);
+      break;
     }
-    case 'average':{if(!def.column)return '';const values=filtered.map(r=>numberValue(r?.[def.column!])).filter(Number.isFinite);if(!values.length)return '';return formatNumber(values.reduce((a,b)=>a+b,0)/values.length,decimals);}
-    case 'sum':{if(!def.column)return '';const values=filtered.map(r=>numberValue(r?.[def.column!])).filter(Number.isFinite);if(!values.length)return '';return formatNumber(values.reduce((a,b)=>a+b,0),decimals);}
+    case 'average':{
+      if(def.column){const values=filtered.map(r=>numberValue(r?.[def.column!]??'')).filter(Number.isFinite);if(values.length)value=formatNumber(values.reduce((a,b)=>a+b,0)/values.length,decimals);}break;
+    }
+    case 'sum':{
+      if(def.column){const values=filtered.map(r=>numberValue(r?.[def.column!]??'')).filter(Number.isFinite);if(values.length)value=formatNumber(values.reduce((a,b)=>a+b,0),decimals);}break;
+    }
     case 'join_unique':{
-      if(!def.column)return '';
-      const seen=new Set<string>();const values:string[]=[];
-      for(const row of filtered){const raw=String(row?.[def.column!]??'').trim();const normalized=norm(raw);if(raw&&normalized&&!seen.has(normalized)){seen.add(normalized);values.push(raw);}}
-      return values.join(def.separator??', ');
+      if(def.column){const seen=new Set<string>();const values:string[]=[];for(const row of filtered){const raw=String(row?.[def.column!]??'').trim();const normalized=norm(raw);if(raw&&normalized&&!seen.has(normalized)){seen.add(normalized);values.push(raw);}}value=values.join(def.separator??', ');}break;
     }
   }
+  return {value,reason:value?'':'No existe un resultado calculable con los registros actuales.'};
+}
+
+export async function inspectTemplateFields(template:string,ctx:any):Promise<FieldInspection[]>{
+  const defs=new Map<string,FieldDefinition>(availableFields(ctx).map(d=>[d.key,d]));
+  const inspections:FieldInspection[]=[];
+  for(const token of extractTokens(template)){
+    const def=defs.get(token);
+    if(!def){inspections.push({key:token,label:token,kind:'unknown',status:'pending',value:'',source:'Sin definición',operation:'—',reason:'El campo no está registrado para este documento.'});continue;}
+    const resolved=await resolveDefinitionDetailed(def,ctx);
+    inspections.push({
+      key:token,
+      label:def.label,
+      kind:def.kind,
+      status:resolved.value!==''?'resolved':'pending',
+      value:resolved.value,
+      source:def.kind==='system'?'Contexto del documento':`${def.source?.documentId??ctx.document.id} · ${def.source?.matrixId??'Sin matriz'}`,
+      operation:def.kind==='system'?'contexto':def.operation??'—',
+      reason:resolved.reason
+    });
+  }
+  return inspections;
 }
 
 export async function renderTemplateFields(template:string,ctx:any):Promise<RenderedFields>{
-  let text=interpolate(template,{period:ctx.period,unit:ctx.unit,processLabel:ctx.process.label,documentLabel:ctx.document.label});
+  let text=interpolate(template,templateContext(ctx));
   const defs=new Map<string,FieldDefinition>(((ctx.document?.fields??[]) as FieldDefinition[]).map(d=>[d.key,d]));
-  const tokens=[...new Set([...text.matchAll(/{{\s*([A-Z0-9_]+)\s*}}/g)].map(m=>m[1]))];
+  const tokens=extractTokens(text);
   const pending:string[]=[];const resolved:Record<string,string>={};
   for(const token of tokens){
     const def=defs.get(token);
     if(!def){pending.push(token);text=text.replace(new RegExp(`{{\\s*${token}\\s*}}`,'g'),`[Dato pendiente: ${token}]`);continue;}
-    const value=await resolveDefinition(def,ctx);
-    if(value===''){if(def.required!==false)pending.push(def.label);text=text.replace(new RegExp(`{{\\s*${token}\\s*}}`,'g'),def.required===false?'':`[Dato pendiente: ${def.label}]`);}else{resolved[token]=value;text=text.replace(new RegExp(`{{\\s*${token}\\s*}}`,'g'),value);}
+    const detail=await resolveDefinitionDetailed(def,ctx);
+    if(detail.value===''){
+      if(def.required!==false)pending.push(def.label);
+      text=text.replace(new RegExp(`{{\\s*${token}\\s*}}`,'g'),def.required===false?'':`[Dato pendiente: ${def.label}]`);
+    }else{
+      resolved[token]=detail.value;
+      text=text.replace(new RegExp(`{{\\s*${token}\\s*}}`,'g'),detail.value);
+    }
   }
   return {text,pending:[...new Set(pending)],resolved};
 }
