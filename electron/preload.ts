@@ -22,6 +22,10 @@ contextBridge.exposeInMainWorld('docUnits', {
   pdf: {
     generate: (args:any) => ipcRenderer.invoke('pdf:generate', args)
   },
+  clipboard: {
+    readText: () => ipcRenderer.invoke('clipboard:read-text'),
+    writeText: (text:string) => ipcRenderer.invoke('clipboard:write-text', text)
+  },
   stats: (args:any) => ipcRenderer.invoke('stats:get', args),
   system: {
     dataRoot: () => ipcRenderer.invoke('system:data-root')
